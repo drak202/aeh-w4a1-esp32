@@ -10,7 +10,8 @@ The dongle plugs into a dedicated 4-pin port on the indoor unit's control board 
 2. RS485 B-
 3. RS485 A+
 4. +5V (red wire)
-<img width="541" height="398" alt="image" src="https://github.com/user-attachments/assets/f066fb84-200a-4273-a910-ec6bfff14970" />
+<img width="541" height="398" alt="image" src="https://github.com/user-attachments/assets/f6f8c7b5-ff01-4907-986d-f90b150f92e4" />
+
 
 
 This ESPHome component plugs into the same 4-pin port, uses the same RS485 communication and 5V power, and speaks the identical Hisense protocol, but provides full local control through Home Assistant, WEB Iterfaces without any cloud dependency.
