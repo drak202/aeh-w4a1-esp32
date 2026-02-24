@@ -1,0 +1,170 @@
+esphome:
+  name: "my_hisense_ac"
+  friendly_name: "ac"
+  includes:
+    - hisense_ac.h
+
+esp32:
+  board: wemos_d1_mini32
+  framework:
+    type: arduino
+
+uart:
+  id: uart_bus
+  tx_pin: GPIO16
+  rx_pin: GPIO17
+  baud_rate: 9600
+
+logger:
+  level: INFO
+  baud_rate: 0
+
+api:
+
+ota:
+
+wifi:
+  ssid: ""
+  password: ""
+
+  manual_ip:
+    static_ip: 10.8.10.90
+    gateway: 10.8.10.1
+    subnet: 255.255.255.0
+    dns1: 10.8.10.1
+
+  ap:
+    ssid: "Hisense Fallback"
+    password: "12345678"
+
+captive_portal:
+
+web_server:
+  port: 80
+
+globals:
+  - id: compressor_frequency
+    type: Sensor*
+  - id: compressor_frequency_setting
+    type: Sensor*
+  - id: compressor_frequency_send
+    type: Sensor*
+  - id: outdoor_temperature
+    type: Sensor*
+  - id: outdoor_condenser_temperature
+    type: Sensor*
+  - id: compressor_exhaust_temperature
+    type: Sensor*
+  - id: target_exhaust_temperature
+    type: Sensor*
+  - id: indoor_pipe_temperature
+    type: Sensor*
+  - id: indoor_humidity_setting
+    type: Sensor*
+  - id: indoor_humidity_status
+    type: Sensor*
+  - id: power
+    type: Sensor*
+
+climate:
+  - platform: custom
+    id: my_climate
+    lambda: |-
+      auto aircon_climate = new AirconClimate(id(uart_bus));
+      App.register_component(aircon_climate);
+      id(compressor_frequency) = &aircon_climate->compressor_frequency;
+      id(compressor_frequency_setting) = &aircon_climate->compressor_frequency_setting;
+      id(compressor_frequency_send) = &aircon_climate->compressor_frequency_send;
+      id(outdoor_temperature) = &aircon_climate->outdoor_temperature;
+      id(outdoor_condenser_temperature) = &aircon_climate->outdoor_condenser_temperature;
+      id(compressor_exhaust_temperature) = &aircon_climate->compressor_exhaust_temperature;
+      id(target_exhaust_temperature) = &aircon_climate->target_exhaust_temperature;
+      id(indoor_pipe_temperature) = &aircon_climate->indoor_pipe_temperature;
+      id(indoor_humidity_setting) = &aircon_climate->indoor_humidity_setting;
+      id(indoor_humidity_status) = &aircon_climate->indoor_humidity_status;
+      id(power) = &aircon_climate->power;
+
+      return {aircon_climate};
+    climates:
+      - name: "Aircon Climate"
+
+sensor:
+  - platform: custom
+    lambda: |-
+      return {
+        id(compressor_frequency),
+        id(compressor_frequency_setting),
+        id(compressor_frequency_send),
+        id(outdoor_temperature),
+        id(outdoor_condenser_temperature),
+        id(compressor_exhaust_temperature),
+        id(target_exhaust_temperature),
+        id(indoor_pipe_temperature),
+        id(indoor_humidity_setting),
+        id(indoor_humidity_status),
+        id(power)
+      };
+    sensors:
+      - name: "Compressor Frequency"
+        unit_of_measurement: "Hz"
+        device_class: "frequency"
+        state_class: "measurement"
+      - name: "Compressor Frequency Setting"
+        unit_of_measurement: "Hz"
+        device_class: "frequency"
+        state_class: "measurement"
+      - name: "Compressor Frequency Send"
+        unit_of_measurement: "Hz"
+        device_class: "frequency"
+        state_class: "measurement"
+      - name: "Outdoor Temperature"
+        unit_of_measurement: "°C"
+        device_class: "temperature"
+        state_class: "measurement"
+      - name: "Outdoor Condenser Temperature"
+        unit_of_measurement: "°C"
+        device_class: "temperature"
+        state_class: "measurement"
+      - name: "Compressor Exhaust Temperature"
+        unit_of_measurement: "°C"
+        device_class: "temperature"
+        state_class: "measurement"
+      - name: "Target Exhaust Temperature"
+        unit_of_measurement: "°C"
+        device_class: "temperature"
+        state_class: "measurement"
+      - name: "Indoor Evaporator Inlet Temperature"
+        unit_of_measurement: "°C"
+        device_class: "temperature"
+        state_class: "measurement"
+      - name: "Indoor Humidity setting"
+        unit_of_measurement: "%"
+        device_class: "humidity"
+        state_class: "measurement"
+      - name: "Indoor Humidity status"
+        unit_of_measurement: "%"
+        device_class: "humidity"
+        state_class: "measurement"
+      - name: "AC Power"
+        unit_of_measurement: "W"
+        device_class: "power"
+        state_class: "measurement"
+
+switch:
+  - platform: restart
+    name: "Restart ESP"
+
+  # Display LED
+  - platform: template
+    name: "Display Switch"
+    id: display_switch
+    optimistic: true
+    restore_mode: ALWAYS_ON
+    turn_on_action:
+      - uart.write:
+          id: uart_bus
+          data: [0xF4, 0xF5, 0x00, 0x40, 0x29, 0x00, 0x00, 0x01, 0x01, 0xFE, 0x01, 0x00, 0x00, 0x65, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x93, 0xF4, 0xFB]
+    turn_off_action:
+      - uart.write:
+          id: uart_bus
+          data: [0xF4, 0xF5, 0x00, 0x40, 0x29, 0x00, 0x00, 0x01, 0x01, 0xFE, 0x01, 0x00, 0x00, 0x65, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x13, 0xF4, 0xFB]
